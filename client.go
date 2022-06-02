@@ -37,7 +37,24 @@ func NewClient(serverIp string, serverPort int) *Client {
 func (client *Client) DealResponse() {
 	io.Copy(os.Stdout, client.conn)
 }
+func (client *Client) PublicChat() {
+	var charMsg string
+	fmt.Println("请输入公聊消息 exit退出：")
+	fmt.Scanln(&charMsg)
 
+	for charMsg != "exit" {
+		if len(charMsg) > 0 {
+			_, err := client.conn.Write([]byte(charMsg + "\n"))
+			if err != nil {
+				fmt.Println("conn.write error :", err)
+				break
+			}
+		}
+		charMsg = ""
+		fmt.Println("请输入公聊消息：")
+		fmt.Scanln(&charMsg)
+	}
+}
 func (client *Client) UpdateName() bool {
 	fmt.Println("请输入用户名：")
 	fmt.Scan(&client.Name)
@@ -73,11 +90,10 @@ func (client *Client) Run() {
 		}
 		switch client.flag {
 		case 1:
-			fmt.Println("公聊模式")
+			client.PublicChat()
 		case 2:
 			fmt.Println("私聊模式")
 		case 3:
-			fmt.Println("更新用户名")
 			client.UpdateName()
 		case 0:
 			fmt.Println("退出")
