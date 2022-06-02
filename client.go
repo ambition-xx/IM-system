@@ -3,8 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net"
+	"os"
 )
 
 type Client struct {
@@ -20,7 +22,7 @@ func NewClient(serverIp string, serverPort int) *Client {
 	client := &Client{
 		ServerIp:   serverIp,
 		ServerPort: serverPort,
-		flag: 999,
+		flag:       999,
 	}
 	// 链接server
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", serverIp, serverPort))
@@ -32,6 +34,23 @@ func NewClient(serverIp string, serverPort int) *Client {
 	return client
 }
 
+func (client *Client) DealResponse() {
+	io.Copy(os.Stdout, client.conn)
+}
+
+func (client *Client) UpdateName() bool {
+	fmt.Println("请输入用户名：")
+	fmt.Scan(&client.Name)
+	sendMsg := "rename|" + client.Name + "\n"
+
+	_, err := client.conn.Write([]byte(sendMsg))
+	if err != nil {
+		fmt.Println("conn.write error: ", err)
+		return false
+	}
+	return true
+}
+
 func (client *Client) Menu() bool {
 	var flag int
 	fmt.Println("1.公聊模式")
@@ -40,7 +59,7 @@ func (client *Client) Menu() bool {
 	fmt.Println("0.退出")
 
 	fmt.Scanln(&flag)
-	if flag >= 0 && flag < 4 { 
+	if flag >= 0 && flag < 4 {
 		client.flag = flag
 		return true
 	} else {
@@ -59,12 +78,14 @@ func (client *Client) Run() {
 			fmt.Println("私聊模式")
 		case 3:
 			fmt.Println("更新用户名")
+			client.UpdateName()
 		case 0:
 			fmt.Println("退出")
 
 		}
 	}
 }
+
 var serverIp string
 var serverPort int
 
@@ -81,7 +102,7 @@ func main() {
 		log.Println("服务器链接失败。。。")
 	}
 	fmt.Println("服务器链接成功。。。")
-
+	go client.DealResponse()
 	//  启动客户端业务
 	client.Run()
 	// select {}
