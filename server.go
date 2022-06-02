@@ -96,7 +96,7 @@ func (this *Server) handler(conn net.Conn) {
 		case <-isLive:
 			//当前用户是活跃的  重置定时器
 			//不做任何事情 为了激活select 更新下面的定时器
-		case <-time.After(10 * time.Second):
+		case <-time.After(60 * 5 * time.Second):
 			//已经超时
 			//将user强制下线
 			user.SendMsg("你被踢了。。。")
@@ -106,7 +106,7 @@ func (this *Server) handler(conn net.Conn) {
 			//关闭链接
 			conn.Close()
 			// user.Offline()
-		
+
 			//退出当前handler
 			return // runtime.Goexit()
 		}
