@@ -6,17 +6,19 @@ import (
 	"log"
 	"net"
 	"sync"
+	"time"
 )
 
 type Server struct {
-	Ip        string
-	Port      int
+	Ip   string
+	Port int
 	//在线用户列表
 	OnlineMap map[string]*User
 	mapLock   sync.RWMutex
 	//消息广播的channel
-	Message   chan string
+	Message chan string
 }
+
 // 创建一个server的接口
 // create a server object
 func NewServer(ip string, port int) *Server {
@@ -59,7 +61,8 @@ func (this *Server) handler(conn net.Conn) {
 
 	// 广播用户上线消息
 	// this.BroadCast(user, "已上线")
-
+	// 监听用户是否活跃的channel
+	isLive := make(chan bool)
 	// 接收客户端消息
 	go func() {
 		buf := make([]byte, 4096)
@@ -69,7 +72,7 @@ func (this *Server) handler(conn net.Conn) {
 			if n == 0 {
 				// this.BroadCast(user,"下线")
 				user.Offline()
-				return;
+				return
 			}
 			if err != nil && err != io.EOF {
 				log.Println("conn read err", err)
@@ -81,11 +84,34 @@ func (this *Server) handler(conn net.Conn) {
 			// this.BroadCast(user, msg)
 			//用户针对消息进行处理
 			user.DoMessage(msg)
+
+			// 表示当前用户依然活跃
+			isLive <- true
 		}
 
 	}()
 	// 当前handler阻塞
-	select {}
+	for {
+		select {
+		case <-isLive:
+			//当前用户是活跃的  重置定时器
+			//不做任何事情 为了激活select 更新下面的定时器
+		case <-time.After(10 * time.Second):
+			//已经超时
+			//将user强制下线
+			user.SendMsg("你被踢了。。。")
+			//销毁用的资源
+			close(user.C)
+
+			//关闭链接
+			conn.Close()
+			// user.Offline()
+		
+			//退出当前handler
+			return // runtime.Goexit()
+		}
+
+	}
 }
 
 // start a server
@@ -103,7 +129,7 @@ func (this *Server) Start() {
 		// accept
 		conn, err := listner.Accept()
 		if err != nil {
-			log.Println("accept err ..", err)
+			log.Println("accept err ...", err)
 		}
 		go this.handler(conn)
 	}
