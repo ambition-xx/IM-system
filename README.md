@@ -9,7 +9,7 @@ go即时通讯系统
 
 #### 安装教程
 
-1.  xxxx
+1.  clone rep
 2.  xxxx
 3.  xxxx
 
