@@ -9,7 +9,7 @@ go即时通讯系统
 
 #### 安装教程
 
-1.  clone rep
+1.  git clone https://gitee.com/ambition_xx/IM-system.git
 2.  xxxx
 3.  xxxx
 
